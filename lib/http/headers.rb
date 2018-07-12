@@ -5,6 +5,7 @@ require "forwardable"
 require "http/errors"
 require "http/headers/mixin"
 require "http/headers/known"
+require "http/header_name"
 
 module HTTP
   # HTTP Headers container.
@@ -39,7 +40,7 @@ module HTTP
     # @param [#to_s] name header name
     # @return [void]
     def delete(name)
-      name = normalize_header name.to_s
+      name = normalize_header name
       @pile.delete_if { |k, _| k == name }
     end
 
@@ -49,7 +50,7 @@ module HTTP
     # @param [Array<#to_s>, #to_s] value header value(s) to be appended
     # @return [void]
     def add(name, value)
-      name = normalize_header name.to_s
+      name = normalize_header name
       Array(value).each { |v| @pile << [name, v.to_s] }
     end
 
@@ -57,7 +58,7 @@ module HTTP
     #
     # @return [Array<String>]
     def get(name)
-      name = normalize_header name.to_s
+      name = normalize_header name
       @pile.select { |k, _| k == name }.map { |_, v| v }
     end
 
@@ -80,7 +81,7 @@ module HTTP
     #
     # @return [Boolean]
     def include?(name)
-      name = normalize_header name.to_s
+      name = normalize_header name
       @pile.any? { |k, _| k == name }
     end
 
@@ -201,6 +202,9 @@ module HTTP
     #   match {HEADER_NAME_RE}
     # @return [String] canonical HTTP header name
     def normalize_header(name)
+      return name if name.is_a?(HeaderName)
+
+      name = name.to_s
       return name if name =~ CANONICAL_NAME_RE
 
       normalized = name.split(/[\-_]/).each(&:capitalize!).join("-")
